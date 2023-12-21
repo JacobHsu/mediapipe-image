@@ -1,48 +1,112 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
+import React, { useEffect, useRef, useMemo } from "react";
+import Image from "next/image";
+import { Inter } from "next/font/google";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
+
+import { ImageEmbedder, FilesetResolver } from "@mediapipe/tasks-vision";
 
 export default function Home() {
+  const [imageEmbedder, setImageEmbedder] = React.useState(null);
+  // const [runningMode, setRunningMode] = React.useState("IMAGE");
+  const [dogValue, setDogValue] = React.useState(null);
+  const [catValue, setCatValue] = React.useState(null);
+
+  useEffect(() => {
+    FilesetResolver.forVisionTasks(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm"
+    ).then((vision) => {
+      ImageEmbedder.createFromOptions(vision, {
+        baseOptions: {
+          modelAssetPath: `https://storage.googleapis.com/mediapipe-models/image_embedder/mobilenet_v3_small/float32/1/mobilenet_v3_small.tflite`,
+        },
+        runningMode: "IMAGE",
+      }).then((result) => {
+        setImageEmbedder(result);
+      });
+    });
+  }, []);
+
+  useEffect(() => {
+
+    const imageContainer1 = document.getElementById("embedOnClick1");
+    const imageContainer2 = document.getElementById("embedOnClick2");
+    const imageResult = document.getElementById("im_result");
+
+    const handleClick = async (event) => {
+      if (!imageEmbedder) {
+        console.log("Wait for objectDetector to load before clicking");
+        return;
+      }
+
+      const imageEmbedderResult0 = imageEmbedder.embed(
+        imageContainer1.children[0]
+      );
+      const imageEmbedderResult1 = imageEmbedder.embed(
+        imageContainer2.children[0]
+      );
+
+      const truncatedEmbedding0 =
+        imageEmbedderResult0.embeddings[0].floatEmbedding;
+      truncatedEmbedding0.length = 4;
+      const truncatedEmbedding1 =
+        imageEmbedderResult1.embeddings[0].floatEmbedding;
+      truncatedEmbedding1.length = 4;
+
+      setDogValue(truncatedEmbedding0);
+      setCatValue(truncatedEmbedding1);
+
+      // Compute cosine similarity.
+      const similarity = ImageEmbedder.cosineSimilarity(
+        imageEmbedderResult0.embeddings[0],
+        imageEmbedderResult1.embeddings[0]
+      );
+      console.log(similarity);
+      imageResult.className = "";
+      imageResult.innerText = "Image similarity: " + similarity.toFixed(2);
+    };
+
+    // Now let's go through all of these and add a click event listener.
+    imageContainer1.children[0].addEventListener("click", handleClick);
+    imageContainer2.children[0].addEventListener("click", handleClick);
+  }, [imageEmbedder]);
+
   return (
     <main
       className={`flex min-h-screen flex-col items-center justify-between p-24 ${inter.className}`}
     >
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/pages/index.js</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+      <p>
+        <b>Click on an image below</b> to calculate the similarity between the
+        two images.
+      </p>
+
+      <div className="mb-32 grid text-center lg:grid-cols-2">
+        <div class="embedOnClick cursor-pointer" id="embedOnClick1">
+          <Image
+            src="/dog.jpeg"
+            width={400}
+            height={265}
+            alt="dog"
+            crossorigin="anonymous"
+            title="Click to get embeddings and cosine similarity"
+          />
+          {dogValue}
+        </div>
+
+        <div class="embedOnClick" id="embedOnClick2">
+          <img
+            src="https://assets.codepen.io/9177687/cat_flickr_publicdomain.jpeg"
+            width={400}
+            height={265}
+            alt="cat"
+            crossorigin="anonymous"
+            title="Click to get embeddings and cosine similarity"
+          />
+          {catValue}
         </div>
       </div>
 
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700/10 after:dark:from-sky-900 after:dark:via-[#0141ff]/40 before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+      <p id="im_result" class="removed"></p>
 
       <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
         <a
@@ -52,7 +116,7 @@ export default function Home() {
           rel="noopener noreferrer"
         >
           <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
+            Docs{" "}
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>
@@ -69,7 +133,7 @@ export default function Home() {
           rel="noopener noreferrer"
         >
           <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
+            Learn{" "}
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>
@@ -86,7 +150,7 @@ export default function Home() {
           rel="noopener noreferrer"
         >
           <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
+            Templates{" "}
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>
@@ -103,7 +167,7 @@ export default function Home() {
           rel="noopener noreferrer"
         >
           <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
+            Deploy{" "}
             <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
               -&gt;
             </span>
@@ -114,5 +178,5 @@ export default function Home() {
         </a>
       </div>
     </main>
-  )
+  );
 }

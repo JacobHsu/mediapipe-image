@@ -1,5 +1,10 @@
 This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
+
+[Image Segmentation](https://mediapipe-studio.webapps.google.com/demo/image_segmenter)  
+[MediaPipe Image Segmentation Task for web](https://codepen.io/mediapipe-preview/pen/xxJNjbN)  
+[MediaPipe Image Embedder task](https://codepen.io/JacobHsu/pen/GRzVeQB)  
+
 ## Getting Started
 
 First, run the development server:
