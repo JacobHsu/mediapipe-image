@@ -5,6 +5,7 @@ import { Inter } from "next/font/google";
 const inter = Inter({ subsets: ["latin"] });
 
 import { ImageEmbedder, FilesetResolver } from "@mediapipe/tasks-vision";
+import dogEmbedding from "../embedding/dog.json";
 
 export default function Home() {
   const [imageEmbedder, setImageEmbedder] = React.useState(null);
@@ -42,6 +43,7 @@ export default function Home() {
       const imageEmbedderResult0 = imageEmbedder.embed(
         imageContainer1.children[0]
       );
+      
       const imageEmbedderResult1 = imageEmbedder.embed(
         imageContainer2.children[0]
       );
@@ -69,6 +71,47 @@ export default function Home() {
     // Now let's go through all of these and add a click event listener.
     imageContainer1.children[0].addEventListener("click", handleClick);
     imageContainer2.children[0].addEventListener("click", handleClick);
+  }, [imageEmbedder]);
+
+  useEffect(() => {
+    if (!imageEmbedder) {
+      return;
+    }
+
+    const imageContainer1 = document.getElementById("embedOnClick1");
+    // const imageContainer2 = document.getElementById("embedOnClick2");
+    const imageJsonResult = document.getElementById("json_result");
+
+    const handleClick = async (event) => {
+      const imageEmbedderResult0 = imageEmbedder.embed(
+        imageContainer1.children[0]
+      );
+
+      // Compute cosine similarity.
+      const similarity = ImageEmbedder.cosineSimilarity(
+        dogEmbedding,
+        imageEmbedderResult0.embeddings[0]
+      );
+      // console.log(similarity);
+      
+      imageJsonResult.className = "";
+      imageJsonResult.innerText = "Image & Json similarity: " + similarity.toFixed(2);
+
+      // 創建一個 Blob 實例
+      // const imageEmbedderResult0 = imageEmbedder.embed(
+      //   imageContainer1.children[0]
+      // );
+      // let jsonContent = JSON.stringify(imageEmbedderResult0);
+      // let blob = new Blob([jsonContent], {type: "application/json"});
+      // let url = URL.createObjectURL(blob);
+      // let a = document.createElement('a');
+      // a.href = url;
+      // a.download = 'dog.json';
+      // a.click(); // 觸發下載
+    };
+  
+    imageContainer1.children[0].addEventListener("click", handleClick);
+ 
   }, [imageEmbedder]);
 
   return (
@@ -107,6 +150,7 @@ export default function Home() {
       </div>
 
       <p id="im_result" class="removed"></p>
+      <p id="json_result" class="removed"></p>
 
       <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
         <a
@@ -140,40 +184,6 @@ export default function Home() {
           </h2>
           <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
             Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Discover and deploy boilerplate example Next.js&nbsp;projects.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=default-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
           </p>
         </a>
       </div>
